@@ -1,1 +1,0 @@
-# DeltaLake.Azure

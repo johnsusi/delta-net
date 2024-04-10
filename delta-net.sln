@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeltaLake", "src\DeltaLake\DeltaLake.csproj", "{3AC60898-A257-46F5-AFD2-EB4FA200084C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EE82445C-25A0-4AC2-AF9C-41700AA7D848}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeltaLake.Tests", "tests\DeltaLake.Tests\DeltaLake.Tests.csproj", "{80D42035-6430-4198-85C7-8D7974210EDB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3AC60898-A257-46F5-AFD2-EB4FA200084C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AC60898-A257-46F5-AFD2-EB4FA200084C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AC60898-A257-46F5-AFD2-EB4FA200084C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AC60898-A257-46F5-AFD2-EB4FA200084C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80D42035-6430-4198-85C7-8D7974210EDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80D42035-6430-4198-85C7-8D7974210EDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80D42035-6430-4198-85C7-8D7974210EDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80D42035-6430-4198-85C7-8D7974210EDB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{80D42035-6430-4198-85C7-8D7974210EDB} = {EE82445C-25A0-4AC2-AF9C-41700AA7D848}
+	EndGlobalSection
+EndGlobal
