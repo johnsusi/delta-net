@@ -9,19 +9,27 @@ init:
 	@dotnet tool restore
 
 build:
-	@dotnet build
+	@dotnet build --configuration Release
 
-test:
+test: build
 	@dotnet test \
+		--configuration Release \
+		--no-build \
 		--collect:"XPlat Code Coverage" \
 		--logger trx \
-		--results-directory:out/TestResults
+		--results-directory:out/TestResults		
 
-report:
+report: test
 	@dotnet reportgenerator \
 		-reports:"./out/TestResults/*/coverage.cobertura.xml" \
 		-targetdir:"out/CoverageReport" \
 		-reporttypes:"Html;Badges"
+
+package: test
+	@dotnet pack \
+		--configuration Release \
+		--no-build \
+		--output out/
 
 clean:
 	@dotnet clean

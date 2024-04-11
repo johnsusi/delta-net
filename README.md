@@ -7,11 +7,19 @@ A dotnet library for Delta Lake.
 
 ## Introduction
 
-This project uses Delta Lake, an open-source storage layer that brings ACID (Atomicity, Consistency, Isolation, Durability) transactions to Apache Spark and big data workloads.
+This project uses Delta Lake, an open-source storage layer that brings ACID (Atomicity, Consistency, Isolation, Durability) transactions to big data workloads.
 
 Delta Lake provides the ability to perform batch and streaming workloads on a single platform with high reliability and performance. It offers schema enforcement and evolution, ensuring data integrity. It also provides a full historical audit trail of all the changes made to the data.
 
 ## Getting Started
+
+### Install the package
+
+```pwsh
+dotnet add package DeltaLake
+```
+
+## Usage
 
 ### Reading a table
 
