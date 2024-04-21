@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Apache.Arrow;
+using Apache.Arrow.Types;
 using DeltaLake.Protocol;
 using ParquetSharp;
 
@@ -81,58 +82,55 @@ public class DeltaTableTests
         Assert.Equal(3, max);
     }
 
-    // private static void CreateTestTable(IDeltaFileSystem fs)
-    // {
+    [Fact]
+    public void Max_WithMultipleAdds_ShouldReturnMax()
+    {
+        using var fs = new TestFileSystem();
+        var table = new DeltaTable(
+            new TestFileSystem(),
+            [
+                new (metaData: new(
+                    Guid.NewGuid(),
+                    new DeltaSchema("struct", [
+                        new("Test", "integer", false, []),
+                    ]),
+                    DeltaFormat.Default,
+                    [],
+                    []
+                )),
+                new DeltaAction(add: new ("part-00000-00000000-0000-0000-0000-000000.parquet", 0, DateTimeOffset.UtcNow, true, new DeltaStats(3, [new("Test", 1)],  [new("Test", 3)], [new ("Test", 0)]))),
+                new DeltaAction(add: new ("part-00001-00000000-0000-0000-0000-000000.parquet", 0, DateTimeOffset.UtcNow, true, new DeltaStats(3, [new("Test", 6)],  [new("Test", 9)], [new ("Test", 0)]))),
+                new DeltaAction(add: new ("part-00002-00000000-0000-0000-0000-000000.parquet", 0, DateTimeOffset.UtcNow, true, new DeltaStats(3, [new("Test", 4)],  [new("Test", 5)], [new ("Test", 0)]))),
+            ],
+            0
+        );
 
-    //     var ids = new int[] { 1, 2, 3 };
-    //     var timestamps = new DateTimeOffset[] {
-    //         new(2021, 1, 1, 0, 0, 0, TimeSpan.Zero),
-    //         new(2021, 1, 2, 0, 0, 0, TimeSpan.Zero),
-    //         new(2021, 1, 3, 0, 0, 0, TimeSpan.Zero),
-    //     };
+        var max = table.Max("Test");
 
-    //     var numericValues = new double[] { 0, 2, 1 };
-    //     var stringValues = new string[] { "a", "c", "b" };
+        Assert.Equal(9, max);
+    }
 
-    //     var columns = new Column[]
-    //     {
-    //         new Column<int>("Id"),
-    //         new Column<DateTimeOffset>("Timestamp"),
-    //         new Column<double>("numericValue"),
-    //         new Column<string>("numericValue")
-    //     };
 
-    //     var filename = "part-00000-{Guid.NewGuid()}.parquet";
-    //     using var stream = fs.OpenWrite(filename);
-    //     using var file = new ParquetFileWriter(stream, columns);
-    //     using var rowGroup = file.AppendRowGroup();
+    [Fact]
+    public void Max_WithTableFromFileSystem_ShouldReturnMax()
+    {
+        using var fs = new TestFileSystem();
+        var schema = new Schema([new("Test", Int32Type.Default, false)], []);
+        using var data1 = new RecordBatch(schema, [new Int32Array.Builder().AppendRange([1, 2, 3]).Build()], 3);
+        using var data2 = new RecordBatch(schema, [new Int32Array.Builder().AppendRange([7, 8, 9]).Build()], 3);
+        using var data3 = new RecordBatch(schema, [new Int32Array.Builder().AppendRange([4, 5, 6]).Build()], 3);
+        var table = new DeltaTable.Builder()
+            .WithFileSystem(fs)
+            .WithSchema(schema)
+            .EnsureCreated()
+            .Add(data1)
+            .Add(data2)
+            .Add(data3)
+            .Build();
 
-    //     using (var writer = rowGroup.NextColumn().LogicalWriter<int>())
-    //     {
-    //         writer.WriteBatch(ids);
-    //     }
-    //     using (var writer = rowGroup.NextColumn().LogicalWriter<DateTimeOffset>())
-    //     {
-    //         writer.WriteBatch(timestamps);
-    //     }
-    //     using (var writer = rowGroup.NextColumn().LogicalWriter<double>())
-    //     {
-    //         writer.WriteBatch(numericValues);
-    //     }
-    //     using (var writer = rowGroup.NextColumn().LogicalWriter<string>())
-    //     {
-    //         writer.WriteBatch(stringValues);
-    //     }
+        var max = table.Max("Test");
 
-    //     file.Close();
-
-    //     var metaData = new DeltaMetaData(Guid.NewGuid(), new DeltaSchema("struct", []), DeltaFormat.Default, [], []);
-    //     var add = new DeltaAdd(filename, 0, DateTimeOffset.UtcNow, true);
-    //     fs.CreateDirectory("_delta_log");
-    //     fs.WriteFile("_delta_log/00000000000000000000.json", [
-    //         JsonSerializer.Serialize(new DeltaAction(metaData: metaData), DeltaAction.JsonSerializerOptions),
-    //         JsonSerializer.Serialize(new DeltaAction(add: add), DeltaAction.JsonSerializerOptions),
-    //     ]);
-    // }
+        Assert.Equal(9, max);
+    }
 
 }

@@ -148,24 +148,45 @@ public class DeltaTable
 
     public bool HasColumn(string column) => Schema.Fields.Where(f => f.Name == column).Any();
 
-    public object? XConvert(object? value, string column)
+    private object? ConvertToSchemaType(object? value, string column)
     {
-        return Schema.Fields.Where(f => f.Name == column).First().Type switch
+        var type = Schema.Fields.Where(f => f.Name == column).First().Type;
+        return (type, value) switch
         {
-            "integer" => value is JsonElement x ? x.Deserialize<int>() : Convert.ToInt32(value),
-            "long" => value is JsonElement x ? x.Deserialize<long>() : Convert.ToInt64(value),
-            "float" => value is JsonElement x ? x.Deserialize<float>() : Convert.ToSingle(value),
-            "double" => value is JsonElement x ? x.Deserialize<double>() : Convert.ToDouble(value),
-            "string" => value is JsonElement x ? x.Deserialize<string>() : Convert.ToString(value),
-            "boolean" => value is JsonElement x ? x.Deserialize<bool>() : Convert.ToBoolean(value),
-            "timestamp" => value is JsonElement x ? x.Deserialize<DateTimeOffset>() : Convert.ToDateTime(value),
-            _ => value
+            ("integer", null) => (int?)null,
+            ("integer", JsonElement el) => el.Deserialize<int>(),
+            ("integer", _) => Convert.ToInt32(value),
+            ("long", null) => (long?)null,
+            ("long", JsonElement el) => el.Deserialize<long>(),
+            ("long", _) => Convert.ToInt64(value),
+            ("float", null) => (float?)null,
+            ("float", JsonElement el) => el.Deserialize<float>(),
+            ("float", _) => Convert.ToSingle(value),
+            ("double", null) => (double?)null,
+            ("double", JsonElement el) => el.Deserialize<double>(),
+            ("double", _) => Convert.ToDouble(value),
+            ("string", null) => (string?)null,
+            ("string", JsonElement el) => el.Deserialize<string>(),
+            ("string", _) => Convert.ToString(value),
+            ("boolean", null) => (bool?)null,
+            ("boolean", JsonElement el) => el.Deserialize<bool>(),
+            ("boolean", _) => Convert.ToBoolean(value),
+            ("timestamp", null) => (DateTimeOffset?)null,
+            ("timestamp", JsonElement el) => el.Deserialize<DateTimeOffset>(),
+            ("timestamp", _) => (DateTimeOffset)Convert.ToDateTime(value),
+            _ => throw new NotImplementedException($"Unsupported type: {type}")
         };
     }
 
-    public object? Max(string column) => XConvert(Log.Where(log => log.Add is not null).Max(add => add?.Add?.Stats?.MaxValues[column]), column);
+    public object? Max(string column) =>
+        Log
+            .Select(log => ConvertToSchemaType(log.Add?.Stats?.MaxValues[column], column))
+            .Max();
 
-    public object? Min(string column) => XConvert(Log.Where(log => log.Add is not null).Min(add => add?.Add?.Stats?.MinValues[column]), column);
+    public object? Min(string column) =>
+        Log
+            .Select(log => ConvertToSchemaType(log.Add?.Stats?.MinValues[column], column))
+            .Min();
 
     public class Builder
     {
