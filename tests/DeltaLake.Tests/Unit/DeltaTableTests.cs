@@ -133,4 +133,50 @@ public class DeltaTableTests
         Assert.Equal(9, max);
     }
 
+    [Fact]
+    public void Name_WithNamedTable_ShouldReturnName()
+    {
+        string expected = "TestTableName";
+        using var fs = new TestFileSystem();
+        var table = new DeltaTable(
+            new TestFileSystem(),
+            [
+                new (metaData: new(
+                    Guid.NewGuid(),
+                    new DeltaSchema("struct", [
+                        new("Test", "integer", false, []),
+                    ]),
+                    DeltaFormat.Default,
+                    [],
+                    [],
+                    expected
+                ))
+            ],
+            0
+        );
+
+        var actual = table.Name;
+
+        Assert.Equal(expected, actual);
+    }
+
+
+    [Fact]
+    public void Name_WithNamedTableFromFileSystem_ShouldReturnName()
+    {
+        string expected = "TestTableName";
+        var schema = new Schema([new("Test", Int32Type.Default, false)], []);
+        using var fs = new TestFileSystem();
+        var table = new DeltaTable.Builder()
+            .WithFileSystem(new TestFileSystem())
+            .WithSchema(schema)
+            .WithName(expected)
+            .EnsureCreated()
+            .Build();
+
+        var actual = table.Name;
+
+        Assert.Equal(expected, actual);
+    }
+
 }

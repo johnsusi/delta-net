@@ -196,6 +196,7 @@ public class DeltaTable
         protected List<DeltaAction> Actions = [];
 
         protected bool CreateIfNotExist = false;
+        protected string? Name = null;
 
         public Builder FromTable(DeltaTable table)
         {
@@ -239,6 +240,12 @@ public class DeltaTable
         public Builder WithSchema(Schema schema)
         {
             Schema = DeltaSchema.FromArrow(schema);
+            return this;
+        }
+
+        public Builder WithName(string name)
+        {
+            Name = name;
             return this;
         }
 
@@ -366,7 +373,7 @@ public class DeltaTable
                 FileSystem.CreateDirectory("_delta_log");
                 WriteEntry(FileSystem, 0, [
                     new(protocol: new(1, 2, [], [])),
-                    new(metaData: new(Guid.NewGuid(), Schema, DeltaFormat.Default, [], [])),
+                    new(metaData: new(Guid.NewGuid(), Schema, DeltaFormat.Default, [], [], Name)),
                     ..Actions
                 ]);
                 Actions.Clear();
@@ -415,6 +422,7 @@ public class DeltaTable<TTable> : DeltaTable
         public new Builder WithFileSystem(string path) => (Builder)base.WithFileSystem(path);
         public new Builder WithSchema(DeltaSchema schema) => (Builder)base.WithSchema(schema);
         public new Builder WithSchema(Schema schema) => (Builder)base.WithSchema(schema);
+        public new Builder WithName(string name) => (Builder)base.WithName(name);
         public new Builder EnsureCreated() => (Builder)base.EnsureCreated();
         public new Builder Add(RecordBatch data, Action<AddOptions>? configure = null) => (Builder)base.Add(data, configure);
         public new Builder Add(IEnumerable<RecordBatch> data, Action<AddOptions>? configure = null) => (Builder)base.Add(data, configure);
