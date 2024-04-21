@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="docs/logo.svg" alt="delta-net logo" height="200">
+    <img src="https://raw.githubusercontent.com/johnsusi/delta-net/main/docs/logo.svg" alt="delta-net logo" height="200">
 </p>
 <p align="center">
 A dotnet library for Delta Lake.
