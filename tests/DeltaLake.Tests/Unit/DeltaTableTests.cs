@@ -357,4 +357,28 @@ public class DeltaTableTests
         Assert.Equal(expected, actual);
     }
 
+    [Fact]
+    public void Builder_Add_ShouldWriteSize()
+    {
+        using var fs = new TestFileSystem();
+        var schema = new Schema([
+            new("Test", Int32Type.Default, false),
+        ], []);
+        using var data = new RecordBatch(schema, [
+            new Int32Array.Builder().AppendRange([1, 2, 3]).Build(),
+        ], 3);
+        var table = new DeltaTable.Builder()
+            .WithFileSystem(fs)
+            .WithSchema(schema)
+            .EnsureCreated()
+            .Add(data)
+            .Build();
+
+
+        var sizeInLog = table.Log.Where(log => log.Add is not null).First().Add!.Size;
+        var sizeOnDisk = fs.GetFileSize(table.Files[0]);
+
+        Assert.Equal(sizeInLog, sizeOnDisk);
+    }
+
 }

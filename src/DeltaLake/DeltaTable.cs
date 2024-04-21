@@ -350,6 +350,7 @@ public class DeltaTable
             }
             while (enumerator.MoveNext());
             parquet.Close();
+            stream.Close();
             var size = FileSystem.GetFileSize(path);
             return Add(path, size, DateTimeOffset.UtcNow, true, stats);
         }
