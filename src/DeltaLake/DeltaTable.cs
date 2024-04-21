@@ -153,26 +153,41 @@ public class DeltaTable
         var type = Schema.Fields.Where(f => f.Name == column).First().Type;
         return (type, value) switch
         {
+            ("byte", null) => (sbyte?)null,
+            ("byte", JsonElement el) => el.GetSByte(),
+            ("byte", sbyte same) => same,
+            ("byte", _) => Convert.ToSByte(value),
+            ("short", null) => (short?)null,
+            ("short", JsonElement el) => el.GetInt16(),
+            ("short", short same) => same,
+            ("short", _) => Convert.ToInt16(value),
             ("integer", null) => (int?)null,
-            ("integer", JsonElement el) => el.Deserialize<int>(),
+            ("integer", JsonElement el) => el.GetInt32(),
+            ("integer", int same) => same,
             ("integer", _) => Convert.ToInt32(value),
             ("long", null) => (long?)null,
-            ("long", JsonElement el) => el.Deserialize<long>(),
+            ("long", JsonElement el) => el.GetInt64(),
+            ("long", long same) => same,
             ("long", _) => Convert.ToInt64(value),
             ("float", null) => (float?)null,
-            ("float", JsonElement el) => el.Deserialize<float>(),
+            ("float", JsonElement el) => el.GetSingle(),
+            ("float", float same) => same,
             ("float", _) => Convert.ToSingle(value),
             ("double", null) => (double?)null,
-            ("double", JsonElement el) => el.Deserialize<double>(),
+            ("double", JsonElement el) => el.GetDouble(),
+            ("double", double same) => same,
             ("double", _) => Convert.ToDouble(value),
             ("string", null) => (string?)null,
-            ("string", JsonElement el) => el.Deserialize<string>(),
+            ("string", JsonElement el) => el.GetString(),
+            ("string", string same) => same,
             ("string", _) => Convert.ToString(value),
             ("boolean", null) => (bool?)null,
-            ("boolean", JsonElement el) => el.Deserialize<bool>(),
+            ("boolean", JsonElement el) => el.GetBoolean(),
+            ("boolean", bool same) => same,
             ("boolean", _) => Convert.ToBoolean(value),
             ("timestamp", null) => (DateTimeOffset?)null,
-            ("timestamp", JsonElement el) => el.Deserialize<DateTimeOffset>(),
+            ("timestamp", JsonElement el) => el.GetDateTimeOffset(),
+            ("timestamp", DateTimeOffset dt) => dt,
             ("timestamp", _) => (DateTimeOffset)Convert.ToDateTime(value),
             _ => throw new NotImplementedException($"Unsupported type: {type}")
         };
@@ -180,11 +195,13 @@ public class DeltaTable
 
     public object? Max(string column) =>
         Log
+            .Where(log => log.Add?.Stats?.MaxValues.ContainsKey(column) == true)
             .Select(log => ConvertToSchemaType(log.Add?.Stats?.MaxValues[column], column))
             .Max();
 
     public object? Min(string column) =>
         Log
+            .Where(log => log.Add?.Stats?.MinValues.ContainsKey(column) == true)
             .Select(log => ConvertToSchemaType(log.Add?.Stats?.MinValues[column], column))
             .Min();
 
