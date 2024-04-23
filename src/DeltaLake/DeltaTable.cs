@@ -290,7 +290,7 @@ public class DeltaTable
         public sealed record AddOptions : IDisposable
         {
             public int ChunkSize { get; set; } = 1048576;
-            public Compression Compression { get; set; } = Compression.Snappy;
+            public DeltaCompression Compression { get; set; } = DeltaCompression.Snappy;
             public Guid Id { get; set; } = Guid.NewGuid();
 
             // 0 = Index
@@ -300,7 +300,7 @@ public class DeltaTable
             public ArrowWriterPropertiesBuilder ArrowProperties { get; } = new ArrowWriterPropertiesBuilder()
                 .StoreSchema();
             public WriterPropertiesBuilder ParquetProperties { get; } = new WriterPropertiesBuilder()
-                .Compression(Compression.Snappy);
+                .Compression(DeltaCompression.Snappy.ToParquetSharpCompression());
 
             public void Dispose()
             {
@@ -337,9 +337,12 @@ public class DeltaTable
             using var options = new AddOptions();
             configure?.Invoke(options);
             using var arrowProperties = options.ArrowProperties.Build();
+
+            Compression compression = options.Compression.ToParquetSharpCompression();
+            options.ParquetProperties.Compression(compression);
             using var parquetProperties = options.ParquetProperties.Build();
 
-            var path = string.Format(options.PathFormat, 0, options.Id, options.Compression.ToString().ToLower());
+            var path = string.Format(options.PathFormat, 0, options.Id, compression.ToString().ToLower());
             using var stream = FileSystem.OpenWrite(path);
             using var parquet = new FileWriter(stream, schema, parquetProperties, arrowProperties);
             var stats = new DeltaStats();
