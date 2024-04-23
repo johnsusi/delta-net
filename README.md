@@ -24,7 +24,7 @@ dotnet add package DeltaLake
 ### Reading a table
 
 ```csharp
-import DeltaLake;
+using DeltaLake;
 
 var table = new DeltaTable.Builder()
     .WithFileSystem("file:///path/to/table")
@@ -32,35 +32,34 @@ var table = new DeltaTable.Builder()
 
 await foreach (var batch in table.GetRecordBatches())
 {
-
+    Console.WriteLine(batch);
 }
+
 ```
 
 ### Reading a typed table
 
-```cs
-record FooTable : ITable<Foo>
-{
+```csharp
+using Apache.Arrow;
+using Apache.Arrow.Types;
+using DeltaLake;
 
+record FooTable(int Id, string? Value) : ITable<FooTable>
+{
     public static Schema Schema { get; } = new([
         new("id", Int32Type.Default, false, []),
-        new("foo", StringType.Default, true, [])
+        new("value", StringType.Default, true, [])
     ], []);
 
-    public static IEnumerable<TestTable> Enumerate(RecordBatch batch)
+    public static IEnumerable<FooTable> Enumerate(RecordBatch batch)
     {
-        for (int i = 0; i < batch.Length; i++)
+        for (var i = 0; i < batch.Length; i++)
         {
             var idArray = batch.Column(0) as IReadOnlyList<int?> ?? throw new Exception("Expected non-null array");
-            var fooArray = batch.Column(1) as IReadOnlyList<string?> ?? throw new Exception("Expected non-null array");
-            yield return new TestTable()
-            {
-                Id = idArray[i] ?? throw new Exception("Cannot be null"),
-                Foo = fooArray[i]
-            };
+            var valueArray = batch.Column(1) as IReadOnlyList<string?> ?? throw new Exception("Expected non-null array");
+            yield return new FooTable(idArray[i] ?? throw new Exception("Cannot be null"), valueArray[i]);
         }
     }
-}
 
 var table = new DeltaTable<FooTable>.Builder()
     .WithFileSystem("file:///path/to/table")
@@ -68,15 +67,17 @@ var table = new DeltaTable<FooTable>.Builder()
 
 await foreach (var row in table.ReadAll())
 {
-    Console.WriteLine("{0}", row);
+    Console.WriteLine($"Id: {row.Id}, Value: {row.Value}");
 }
+
+
 
 ```
 
 ### Create a table
 
-```cs
-import DeltaLake;
+```csharp
+using DeltaLake;
 
 var table = new DeltaTable.Builder()
     .WithFileSystem("file:///path/to/table")
@@ -88,10 +89,10 @@ var table = new DeltaTable.Builder()
 
 ### Update a table
 
-```cs
-import DeltaLake;
+```csharp
+using DeltaLake;
 
-table = ...;
+var table = ...;
 
 using var data = new RecordBatch(table.Schema, [
     new Int32Array
