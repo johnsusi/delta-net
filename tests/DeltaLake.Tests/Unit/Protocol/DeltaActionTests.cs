@@ -26,7 +26,7 @@ public class DeltaActionTests
 
     [Theory]
     [MemberData(nameof(ValidTestCases))]
-    public void Deserialize_WithConformingJson_ShouldCreateAction(string json, DeltaAction expected)
+    public void FromJson_WithConformingJson_ShouldCreateAction(string json, DeltaAction expected)
     {
         var actual = DeltaAction.FromJson(json);
 
@@ -92,9 +92,20 @@ public class DeltaActionTests
         ];
 
         yield return [
-            """{"protocol":{"minReaderVersion":1,"minWriterVersion":2,"readerFeatures":[],"writerFeatures":[]}}""",
+            """{"protocol":{"minReaderVersion":1,"minWriterVersion":2}}""",
             new DeltaAction(protocol: new(1, 2, [], []))
         ];
+
+        yield return [
+            """{"protocol":{"minReaderVersion":2,"minWriterVersion":7,"writerFeatures":["columnMapping","identityColumns"]}}""",
+            new DeltaAction(protocol: new(2, 7, [], ["columnMapping", "identityColumns"]))
+        ];
+
+        yield return [
+            """{"protocol":{"minReaderVersion":3,"minWriterVersion":7,"readerFeatures":["columnMapping"],"writerFeatures":["columnMapping","identityColumns"]}}""",
+            new DeltaAction(protocol: new(3, 7, ["columnMapping"], ["columnMapping","identityColumns"]))
+        ];
+
     }
 }
 

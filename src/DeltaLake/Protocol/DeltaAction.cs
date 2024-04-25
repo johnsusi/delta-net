@@ -35,7 +35,7 @@ public sealed record class DeltaAction
         Converters = {
             new DeltaStatsToString(),
             new DeltaTimeToLong(),
-
+            new DeltaProtocolJsonConverter(),
         },
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
