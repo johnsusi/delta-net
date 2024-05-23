@@ -5,13 +5,14 @@ namespace DeltaLake.Protocol;
 
 public sealed record class DeltaAction
 {
-    public DeltaMetaData? MetaData { get; } = null;
-    public DeltaAdd? Add { get; } = null;
-    public DeltaRemove? Remove { get; } = null;
-    public DeltaProtocol? Protocol { get; } = null;
-    public JsonDocument? CommitInfo { get; } = null;
+    public DeltaMetaData? MetaData { get; }
+    public DeltaAdd? Add { get; }
+    public DeltaRemove? Remove { get; }
+    public DeltaTransaction? Txn { get; }
+    public DeltaProtocol? Protocol { get; }
+    public JsonDocument? CommitInfo { get; }
 
-    public DeltaAction(DeltaMetaData? metaData = null, DeltaAdd? add = null, DeltaRemove? remove = null, DeltaProtocol? protocol = null, JsonDocument? commitInfo = null)
+    public DeltaAction(DeltaMetaData? metaData = null, DeltaAdd? add = null, DeltaRemove? remove = null, DeltaProtocol? protocol = null, JsonDocument? commitInfo = null,  DeltaTransaction? txn = null)
     {
         int count = 0;
         if (metaData is not null) count++;
@@ -19,6 +20,7 @@ public sealed record class DeltaAction
         if (remove is not null) count++;
         if (protocol is not null) count++;
         if (commitInfo is not null) count++;
+        if (txn is not null) count++;
 
         if (count == 0) throw new ArgumentException("At least one action must be set");
         if (count != 1) throw new ArgumentException("Only one action can be set");
@@ -28,6 +30,7 @@ public sealed record class DeltaAction
         Remove = remove;
         Protocol = protocol;
         CommitInfo = commitInfo;
+        Txn = txn;
     }
 
     public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
@@ -51,5 +54,4 @@ public sealed record class DeltaAction
     {
         return JsonSerializer.Serialize(this, JsonSerializerOptions);
     }
-
 }
