@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Apache.Arrow;
 using DeltaLake.Protocol;
-using Microsoft.VisualBasic;
 using ParquetSharp;
 using ParquetSharp.Arrow;
 
@@ -52,9 +51,10 @@ public class DeltaTable
                     break;
                 case { CommitInfo: not null }:
                     break;
+                case { Txn: not null }:
+                    break;
                 default:
                     throw new Exception($"Invalid action: {action}");
-
             }
         }
         if (MetaData is null)
@@ -100,6 +100,8 @@ public class DeltaTable
                     case { Protocol: not null }:
                         break;
                     case { CommitInfo: not null }:
+                        break;
+                    case { Txn: not null }:
                         break;
                     default:
                         throw new Exception($"Invalid action: {action}");
@@ -287,28 +289,6 @@ public class DeltaTable
             return this;
         }
 
-        public sealed record AddOptions : IDisposable
-        {
-            public int ChunkSize { get; set; } = 1048576;
-            public DeltaCompression Compression { get; set; } = DeltaCompression.Snappy;
-            public Guid Id { get; set; } = Guid.NewGuid();
-
-            // 0 = Index
-            // 1 = Id
-            // 2 = Compression.ToLower()
-            public string PathFormat { get; set; } = "part-{0:D5}-{1}.{2}.parquet";
-            public ArrowWriterPropertiesBuilder ArrowProperties { get; } = new ArrowWriterPropertiesBuilder()
-                .StoreSchema();
-            public WriterPropertiesBuilder ParquetProperties { get; } = new WriterPropertiesBuilder()
-                .Compression(DeltaCompression.Snappy.ToParquetSharpCompression());
-
-            public void Dispose()
-            {
-                ArrowProperties.Dispose();
-                ParquetProperties.Dispose();
-            }
-        }
-
         public Builder Add(RecordBatch data, Action<AddOptions>? configure = null)
         {
             return Add([data], configure);
@@ -327,7 +307,7 @@ public class DeltaTable
                 throw new Exception("Schema is required when adding data");
             }
 
-            var enumerator = data.GetEnumerator();
+            using var enumerator = data.GetEnumerator();
             if (!enumerator.MoveNext())
             {
                 throw new ArgumentException("Data is empty");
@@ -355,13 +335,15 @@ public class DeltaTable
             parquet.Close();
             stream.Close();
             var size = FileSystem.GetFileSize(path);
-            return Add(path, size, DateTimeOffset.UtcNow, true, stats);
-        }
 
-        public Builder Add(string path, long size, DeltaTime timestamp, bool dataChange, DeltaStats stats)
-        {
-            Actions.Add(new DeltaAction(add: new(path, size, timestamp, dataChange, stats)));
+            Actions.Add(new DeltaAction(add: new(path, size,  DateTimeOffset.UtcNow, true, stats)));
+
+            if (options.Transaction is not null)
+            {
+                Actions.Add(new DeltaAction(txn: new(options.Transaction.AppId, options.Transaction.Version, options.Transaction.LastUpdated)));
+            }
             return this;
+            
         }
 
         public Builder Remove(string path, bool dataChange = true)
@@ -411,6 +393,56 @@ public class DeltaTable
 
             return new DeltaTable(FileSystem);
 
+        }
+          public sealed record AddOptions : IDisposable
+        {
+            public int ChunkSize { get; set; } = 1048576;
+            public DeltaCompression Compression { get; set; } = DeltaCompression.Snappy;
+            public Guid Id { get; set; } = Guid.NewGuid();
+            public Transaction? Transaction { get; set; }
+            
+            // 0 = Index
+            // 1 = Id
+            // 2 = Compression.ToLower()
+            public string PathFormat { get; set; } = "part-{0:D5}-{1}.{2}.parquet";
+            public ArrowWriterPropertiesBuilder ArrowProperties { get; } = new ArrowWriterPropertiesBuilder()
+                .StoreSchema();
+            public WriterPropertiesBuilder ParquetProperties { get; } = new WriterPropertiesBuilder()
+                .Compression(DeltaCompression.Snappy.ToParquetSharpCompression());
+
+            public void Dispose()
+            {
+                ArrowProperties.Dispose();
+                ParquetProperties.Dispose();
+            }
+        }
+
+        public sealed record Transaction
+        {
+            public string AppId { get; }
+            public long Version { get; }
+            public long? LastUpdated { get; }
+
+            /// <summary>
+            /// Incremental processing systems (e.g., streaming systems) that track progress using their own application-specific versions need to record what progress has been made,
+            /// in order to avoid duplicating data in the face of failures and retries during a write.
+            /// Transaction identifiers allow this information to be recorded atomically in the transaction log of a delta table along with the other actions that modify the contents of the table.
+            /// </summary>
+            /// <param name="appId">A unique identifier for the application performing the transaction</param>
+            /// <param name="version">An application-specific numeric identifier for this transaction</param>
+            /// <param name="lastUpdated">The time when this transaction action is created, in milliseconds since the Unix epoch</param>
+            /// <exception cref="ArgumentException">AppId cannot be null or empty.</exception>
+            public Transaction(string appId, long version, long? lastUpdated = null)
+            {
+                if (string.IsNullOrEmpty(appId))
+                {
+                    throw new ArgumentException("AppId cannot be null or empty.", nameof(appId));
+                }
+
+                AppId = appId;
+                Version = version;
+                LastUpdated = lastUpdated;
+            }
         }
     }
 }

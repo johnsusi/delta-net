@@ -87,6 +87,16 @@ public class DeltaActionTests
         ];
 
         yield return [
+            """{"txn":{"appId":"my-application","version":1}}""",
+            new DeltaAction(txn: new("my-application", 1))
+        ];
+
+        yield return [
+            """{"txn":{"appId":"my-application","version":1,"lastUpdated":1234}}""",
+            new DeltaAction(txn: new("my-application", 1, 1234))
+        ];
+
+        yield return [
             """{"remove":{"path":"path","dataChange":true}}""",
             new DeltaAction(remove: new("path", true))
         ];
@@ -108,4 +118,3 @@ public class DeltaActionTests
 
     }
 }
-
